@@ -16,11 +16,10 @@
 
 #if   _KERNEL_ == NODEPP_KERNEL_WINDOWS
 #include <nodepp/fs.h>
-#include "windows/exec.cpp"
+#include "windows/exec.h"
 #elif _KERNEL_ == NODEPP_KERNEL_POSIX
-#include <sys/mman.h>
 #include <nodepp/fs.h>
-#include "posix/exec.cpp"
+#include "posix/exec.h"
 #else
 #error "This OS Does not support exec.h"
 #endif
