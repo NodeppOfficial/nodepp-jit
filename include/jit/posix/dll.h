@@ -9,24 +9,31 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#pragma once
+#ifndef NODEPP_POSIX_DLL_JIT
+#define NODEPP_POSIX_DLL_JIT
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#include <dlfcn.h>
+
+/*────────────────────────────────────────────────────────────────────────────*/
 
 namespace nodepp { class dll_t {
 protected:
 
     struct NODE {
-        HMODULE     mem;
+        void* mem   = nullptr;
         ulong size  = 0;
         bool  state = 0;
     };  ptr_t<NODE> obj;
 
 public:
 
-    virtual ~dll_t() { if( obj.count()>1 ){ return; } FreeLibrary(obj->mem); }
+   ~dll_t() { if( obj.count()>1 ){ return; } dlclose( obj->mem ); }
 
     dll_t( string_t name ) : obj( new NODE() ){
 
-        obj->mem = LoadLibraryA( name.get() );
+        obj->mem = dlopen( name.get(), RTLD_LAZY );
 
         if( !obj->mem )
           { throw except_t( "virtual dlopen failed" ); }
@@ -36,12 +43,16 @@ public:
     template< class T, class... V >
     T emit( string_t name, V... args ) const {
         if( obj->mem == nullptr ){ throw except_t( "invalid callback" ); }
-        T (*func)(V...)=(T(*)(V...))( GetProcAddress(obj->mem,name.get()) );
+        T (*func)(V...) = (T(*)(V...))( dlsym(obj->mem,name.get()) );
         return func( args... );
     }
 
     dll_t() noexcept : obj( new NODE() ) {}
 
 }; }
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#endif
 
 /*────────────────────────────────────────────────────────────────────────────*/

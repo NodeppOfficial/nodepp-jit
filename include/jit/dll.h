@@ -16,11 +16,10 @@
 
 #if   _KERNEL_ == NODEPP_KERNEL_WINDOWS
 #include <nodepp/fs.h>
-#include "windows/dll.cpp"
+#include "windows/dll.h"
 #elif _KERNEL_ == NODEPP_KERNEL_POSIX
-#include <dlfcn.h>
 #include <nodepp/fs.h>
-#include "posix/dll.cpp"
+#include "posix/dll.h"
 #else
 #error "This OS Does not support dll.h"
 #endif

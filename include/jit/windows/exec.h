@@ -9,7 +9,15 @@
 
 /*────────────────────────────────────────────────────────────────────────────*/
 
-#pragma once
+#ifndef NODEPP_WINDOWS_EXEC_JIT
+#define NODEPP_WINDOWS_EXEC_JIT
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#include <windows.h>
+#include <memoryapi.h>
+
+/*────────────────────────────────────────────────────────────────────────────*/
 
 namespace nodepp { class exec_t {
 protected:
@@ -22,22 +30,23 @@ protected:
 
 public:
 
-    virtual ~exec_t() { if( obj.count()>1 ){ return; } munmap( obj->mem, obj->size ); }
+   ~exec_t() { if( obj.count()>1 ){ return; } VirtualFree( obj->mem, 0, MEM_RELEASE ); }
 
     exec_t( string_t code ) : obj( new NODE() ){
 
-        auto size= sysconf(_SC_PAGESIZE);
+        SYSTEM_INFO sysInfo; GetSystemInfo( &sysInfo );
+        auto size= sysInfo.dwPageSize; DWORD protect;
         obj->size= (code.size()+size-1) &~ (size-1);
 
-        obj->mem = mmap( NULL, obj->size, PROT_READ | PROT_WRITE,
-        /*------------*/ MAP_PRIVATE | MAP_ANONYMOUS, -1, 0 );
+        obj->mem = VirtualAlloc( NULL, obj->size, MEM_COMMIT | MEM_RESERVE, 
+        /*--------------------*/ PAGE_EXECUTE_READWRITE );
 
-        if( obj->mem == MAP_FAILED )
+        if( obj->mem == NULL )
           { throw except_t( "virtual mmap failed" ); }
 
         memcpy( obj->mem, code.get(), code.size() );
-
-        if( mprotect( obj->mem, obj->size, PROT_READ | PROT_EXEC )==-1 )
+        
+        if( !VirtualProtect( obj->mem, obj->size, PAGE_EXECUTE_READ, &protect ))
           { throw except_t( "virtual mprotect failed" ); }
 
     }
@@ -51,5 +60,9 @@ public:
     exec_t() noexcept : obj( new NODE() ) {}
 
 }; }
+
+/*────────────────────────────────────────────────────────────────────────────*/
+
+#endif
 
 /*────────────────────────────────────────────────────────────────────────────*/

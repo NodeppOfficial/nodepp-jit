@@ -5,8 +5,8 @@ using namespace nodepp;
 
 void onMain() {
 
-    string_t code = "\x48\x89\xf8\x48\x01\xf0\xc3";
-    nodepp::exec_t jit( code );
+    string_t code = fs::read_file("code.bin");
+    exec_t jit( code );
 
     int result = jit.emit<int>( 5, 10 );
     console::log( "<>", result );
